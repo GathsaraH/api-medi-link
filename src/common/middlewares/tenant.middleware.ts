@@ -7,7 +7,6 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { ClerkService } from '@/modules/auth/clerk/clerk.service';
 import { PublicPrismaService } from '@/core/configs/database/public-prisma.service';
 import { TenantPrismaFactory } from '@/core/configs/database/tenant-prisma-factory';
 
@@ -15,7 +14,6 @@ import { TenantPrismaFactory } from '@/core/configs/database/tenant-prisma-facto
 export class TenantMiddleware implements NestMiddleware {
   private readonly logger = new Logger(TenantMiddleware.name);
   constructor(
-    private readonly clerkService: ClerkService,
     private publicPrisma: PublicPrismaService,
     private readonly tenantPrismaFactory: TenantPrismaFactory,
   ) {}
@@ -60,69 +58,69 @@ export class TenantMiddleware implements NestMiddleware {
     }
 
     try {
-      const { user } = await this.clerkService.validateToken(sessionToken);
-      if (!user) {
-        throw new UnauthorizedException('User not found');
-      }
+      // const { user } = await this.clerkService.validateToken(sessionToken);
+      // if (!user) {
+      //   throw new UnauthorizedException('User not found');
+      // }
 
-      // Extract role and tenantCode/tenantCodes from private metadata
-      const privateMetadata = user.privateMetadata as {
-        role?: string;
-        tenantCode?: string;
-      };
+      // // Extract role and tenantCode/tenantCodes from private metadata
+      // const privateMetadata = user.privateMetadata as {
+      //   role?: string;
+      //   tenantCode?: string;
+      // };
 
-      if (!privateMetadata.role) {
-        throw new BadRequestException('User has no role assignment');
-      }
+      // if (!privateMetadata.role) {
+      //   throw new BadRequestException('User has no role assignment');
+      // }
 
-      // Always attach the user and role to the request
-      request['user'] = user;
-      request['role'] = privateMetadata.role;
+      // // Always attach the user and role to the request
+      // request['user'] = user;
+      // request['role'] = privateMetadata.role;
 
-      // Regular tenant user flow - requires single tenant code
-      if (!privateMetadata.tenantCode) {
-        throw new BadRequestException('User has no tenant assignment');
-      }
+      // // Regular tenant user flow - requires single tenant code
+      // if (!privateMetadata.tenantCode) {
+      //   throw new BadRequestException('User has no tenant assignment');
+      // }
 
-      // Get tenant data from public Prisma
-      const tenant = await this.publicPrisma.tenant.findUnique({
-        where: {
-          code: privateMetadata.tenantCode,
-        },
-        include: {
-          dataSource: true,
-        },
-      });
+      // // Get tenant data from public Prisma
+      // const tenant = await this.publicPrisma.tenant.findUnique({
+      //   where: {
+      //     code: privateMetadata.tenantCode,
+      //   },
+      //   include: {
+      //     dataSource: true,
+      //   },
+      // });
 
-      if (!tenant) {
-        throw new BadRequestException('Tenant not found');
-      }
+      // if (!tenant) {
+      //   throw new BadRequestException('Tenant not found');
+      // }
 
-      // Get organization details
-      const tenantPrisma = this.tenantPrismaFactory.createPrismaInstance(tenant.dataSource.url);
-      await tenantPrisma.$connect();
-      const shop = await tenantPrisma.shop.findFirst({
-        where: {
-          users: {
-            some: {
-              email: user.emailAddresses[0].emailAddress,
-            },
-          },
-        },
-      });
-      await tenantPrisma.$disconnect();
+      // // Get organization details
+      // const tenantPrisma = this.tenantPrismaFactory.createPrismaInstance(tenant.dataSource.url);
+      // await tenantPrisma.$connect();
+      // const shop = await tenantPrisma.shop.findFirst({
+      //   where: {
+      //     users: {
+      //       some: {
+      //         email: user.emailAddresses[0].emailAddress,
+      //       },
+      //     },
+      //   },
+      // });
+      // await tenantPrisma.$disconnect();
 
-      if (!shop) {
-        throw new BadRequestException('Shop not found');
-      }
+      // if (!shop) {
+      //   throw new BadRequestException('Shop not found');
+      // }
 
-      // Attach organization and tenant info to the request
-      request['shopId'] = shop.id;
-      request['tenant'] = {
-        tenantCode: tenant.code,
-        datasourceUrl: tenant.dataSource.url,
-        tenantId: tenant.id,
-      };
+      // // Attach organization and tenant info to the request
+      // request['shopId'] = shop.id;
+      // request['tenant'] = {
+      //   tenantCode: tenant.code,
+      //   datasourceUrl: tenant.dataSource.url,
+      //   tenantId: tenant.id,
+      // };
 
       next();
     } catch (error) {
