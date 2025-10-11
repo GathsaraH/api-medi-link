@@ -44,10 +44,20 @@ export class TenantPrismaService extends TenantPrismaClient implements OnModuleI
       Logger.debug("Duration: " + e.duration + "ms");
     });
 
-    this.$use(async (params, next) => {
-      const result = await next(params);
-      return this.processDateFields(result);
+    // Replace $use with $extends for date field processing
+    const extended = this.$extends({
+      query: {
+        $allModels: {
+          async $allOperations({ args, query }) {
+            const result = await query(args);
+            return this.processDateFields(result);
+          },
+        },
+      },
     });
+
+    // Copy extended client methods back to this instance
+    Object.assign(this, extended);
 
     await this.$connect();
   }
@@ -65,7 +75,6 @@ export class TenantPrismaService extends TenantPrismaClient implements OnModuleI
     }
 
     const processed = { ...data };
-
     for (const key in processed) {
       if ((key === "createdAt" || key === "updatedAt" || key === "lastActiveAt") && processed[key] !== null && processed[key] !== undefined) {
         if (processed[key] instanceof Date) {
@@ -77,7 +86,6 @@ export class TenantPrismaService extends TenantPrismaClient implements OnModuleI
         processed[key] = this.processDateFields(processed[key]);
       }
     }
-
     return processed;
   }
 }
