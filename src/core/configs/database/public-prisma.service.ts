@@ -1,20 +1,8 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { PrismaClient as PublicPrismaClient, Prisma } from "@prisma-public/prisma/client";
 
-// Define the middleware type since it's not exported from Prisma
-type PrismaMiddleware = (
-  params: any,
-  next: (params: any) => Promise<any>
-) => Promise<any>;
-
 @Injectable()
 export class PublicPrismaService extends PublicPrismaClient implements OnModuleInit {
-  /**
-   * Add a middleware
-   * @deprecated since 4.16.0. For new code, prefer client extensions instead.
-   * @see https://pris.ly/d/extensions
-   */
-  declare $use: (cb: PrismaMiddleware) => void;
   constructor() {
     super({
       log: [
@@ -33,15 +21,24 @@ export class PublicPrismaService extends PublicPrismaClient implements OnModuleI
       Logger.debug("Duration: " + e.duration + "ms");
     });
 
-    // Using $use middleware with the declared type
-    this.$use(async (params, next) => {
-      const result = await next(params);
-      return this.processDateFields(result);
+    // Replace $use with $extends
+    const extended = this.$extends({
+      query: {
+        $allModels: {
+          async $allOperations({ args, query }) {
+            const result = await query(args);
+            return this.processDateFields(result);
+          },
+        },
+      },
     });
+
+    // Copy extended client methods back to this instance
+    Object.assign(this, extended);
 
     await this.$connect();
   }
-  
+
   /**
    * Use this and the any type to handle serial time object in prisma in nest
    */
@@ -55,7 +52,6 @@ export class PublicPrismaService extends PublicPrismaClient implements OnModuleI
     }
 
     const processed = { ...data };
-
     for (const key in processed) {
       if (
         (key === 'createdAt' || key === 'updatedAt' || key === 'lastActiveAt') &&
@@ -74,7 +70,6 @@ export class PublicPrismaService extends PublicPrismaClient implements OnModuleI
         processed[key] = this.processDateFields(processed[key]);
       }
     }
-
     return processed;
   }
 }
