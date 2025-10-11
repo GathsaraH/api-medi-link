@@ -1,0 +1,70 @@
+generator client {
+    provider = "prisma-client-js"
+    output   = "../node_modules/@prisma-tenant/prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+  url      = env("TENANT_DATABASE_URL")
+}
+
+enum UserRole {
+    ADMIN
+    DOCTOR
+    VISITING_DOCTOR
+    RECEPTIONIST
+    PHARMACIST
+    NURSE
+    LAB_TECHNICIAN
+    ACCOUNTANT
+    PATIENT
+}
+
+enum TenantStatusEnum {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+model MedicalCenter {
+    id        String   @id @default(uuid()) @map("id")
+    name      String   @map("name")
+    address   String   @map("address")
+    createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+    updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+    isActive  Boolean  @default(false) @map("is_active")
+
+    @@map("medical_center")
+}
+
+model User {
+    id          String   @id @default(uuid()) @map("id")
+    firstName   String   @map("first_name")
+    lastName    String?  @map("last_name")
+    phoneNumber String?  @unique @map("phone_number")
+    email       String?  @unique @map("email")
+    role        UserRole @map("role")
+    createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+    updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+    isActive    Boolean  @default(false) @map("is_active")
+
+    @@map("user")
+}
+
+model Patient {
+    id                 String   @id @default(uuid()) @map("id")
+    fullName           String   @map("full_name")
+    nic                String?  @unique @map("nic")
+    phoneNumber        String   @unique @map("phone_number")
+    dateOfBirth        DateTime @map("date_of_birth") @db.Date
+    gender             String   @map("gender")
+    height             Float?   @map("height")
+    weight             Float?   @map("weight")
+    existingConditions String?  @map("existing_conditions")
+    allergies          String?  @map("allergies")
+    createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz()
+    updatedAt          DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+    isActive           Boolean  @default(false) @map("is_active")
+
+    @@map("patient")
+}

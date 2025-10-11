@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/@prisma-public/prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+ url      = env("PUBLIC_DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  DOCTOR
+  VISITING_DOCTOR
+  RECEPTIONIST
+  PHARMACIST
+  NURSE
+  LAB_TECHNICIAN
+  ACCOUNTANT
+  PATIENT
+}
+
+enum TenantStatusEnum {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+model Datasource {
+  id        String   @id @default(uuid()) @map("id")
+  url       String   @map("url")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+  isArchive Boolean  @default(false) @map("is_archive")
+
+  tenants Tenant[]
+
+  @@map("datasource")
+}
+
+model Tenant {
+  id           String     @id @default(uuid()) @map("id")
+  dataSource   Datasource @relation(fields: [dataSourceId], references: [id])
+  dataSourceId String     @map("data_source_id")
+  name         String     @map("name")
+  code         String     @unique @map("code")
+  status       String     @map("status")
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime   @default(now()) @map("updated_at") @db.Timestamptz()
+  isArchive Boolean  @default(false) @map("is_archive")
+
+  @@map("tenant")
+}
+
+model MedicalCenter {
+  id             String   @id @default(uuid()) @map("id")
+  name           String   @map("name")
+  address        String   @map("address")
+  tenantRecordId String?  @map("tenant_record_id")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt      DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+  isArchive Boolean  @default(false) @map("is_archive")
+
+  systemUsers SystemUsers[]
+
+  @@map("medical_center")
+}
+
+model SystemUsers {
+  id              String        @id @default(uuid()) @map("id")
+  firstName       String        @map("first_name")
+  lastName        String        @map("last_name")
+  phoneNumber     String        @unique @map("phone_number")
+  email           String        @unique @map("email")
+  password        String        @map("password")
+  role            UserRole      @map("role")
+  tenantRecordId  String?       @map("tenant_record_id")
+  medicalCenter   MedicalCenter @relation(fields: [medicalCenterId], references: [id])
+  medicalCenterId String        @map("medical_center_id")
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime      @default(now()) @map("updated_at") @db.Timestamptz()
+  isArchive Boolean  @default(false) @map("is_archive")
+
+  @@map("system_users")
+}
