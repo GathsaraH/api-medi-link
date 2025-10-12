@@ -32,29 +32,28 @@ async function main() {
   });
   console.log(`✅ Datasource set up: ${datasource.url}`);
 
-
   const tenant = await prisma.tenant.upsert({
     where: { code: devTenantCode },
     update: {
       name: devTenantName,
       status: 'ACTIVE',
       updatedAt: new Date(),
-      dataSource:{
-        connect:{
-          id: datasource.id
-        }
-      }
+      dataSource: {
+        connect: {
+          id: datasource.id,
+        },
+      },
     },
     create: {
       id: `${uuidgen()}`,
       name: devTenantName,
       code: devTenantCode,
       status: 'ACTIVE',
-      dataSource:{
-        connect:{
-          id: datasource.id
-        }
-      }
+      dataSource: {
+        connect: {
+          id: datasource.id,
+        },
+      },
     },
   });
   console.log(`✅ Tenant set up: ${tenant.name} (${tenant.code})`);
@@ -86,10 +85,10 @@ async function main() {
       phoneNumber: '0777000001',
       email: 'admin@devmed.com',
       role: UserRole.ADMIN,
-      password: 'admin123', 
+      password: 'admin123',
       medicalCenter: {
-        connect: { id: medicalCenterId }
-      }
+        connect: { id: medicalCenterId },
+      },
     },
     {
       id: `${uuidgen()}`,
@@ -100,8 +99,8 @@ async function main() {
       role: UserRole.DOCTOR,
       password: 'doctor123',
       medicalCenter: {
-        connect: { id: medicalCenterId }
-      }
+        connect: { id: medicalCenterId },
+      },
     },
     {
       id: `${uuidgen()}`,
@@ -112,8 +111,8 @@ async function main() {
       role: UserRole.RECEPTIONIST,
       password: 'reception123',
       medicalCenter: {
-        connect: { id: medicalCenterId }
-      }
+        connect: { id: medicalCenterId },
+      },
     },
     {
       id: `${uuidgen()}`,
@@ -124,8 +123,8 @@ async function main() {
       role: UserRole.PHARMACIST,
       password: 'pharma123',
       medicalCenter: {
-        connect: { id: medicalCenterId }
-      }
+        connect: { id: medicalCenterId },
+      },
     },
   ];
 

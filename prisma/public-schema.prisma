@@ -81,6 +81,7 @@ model SystemUsers {
   password             String        @map("password")
   role                 UserRole      @map("role")
   tenantRecordId       String?       @map("tenant_record_id")
+  slmcNumber           String?   @unique @map("slmc_number")
   isMedicalCenterOwner Boolean       @default(false) @map("is_medical_center_owner")
   medicalCenter        MedicalCenter @relation(fields: [medicalCenterId], references: [id])
   medicalCenterId      String        @map("medical_center_id")

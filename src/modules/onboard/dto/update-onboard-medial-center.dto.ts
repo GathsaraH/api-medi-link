@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsPhoneNumber, IsString } from 'class-validator';
 
 export class CreateOnboardMedicalCenterDto {
   @ApiProperty({
@@ -20,6 +20,16 @@ export class CreateOnboardMedicalCenterDto {
   @IsString()
   @IsNotEmpty()
   address: string;
+  @ApiProperty({
+    name: 'phoneNumber',
+    description: 'Contact phone number of the medical center',
+    example: '+94773245095',
+    required: true,
+  })
+  @IsString()
+  @IsNotEmpty()
+  @IsPhoneNumber()
+  phoneNumber: string;
   @ApiProperty({
     name: 'phoneNumber',
     description: 'Contact phone number of the medical center',
