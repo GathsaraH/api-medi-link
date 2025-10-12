@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
     provider = "postgresql"
-  url      = env("TENANT_DATABASE_URL")
+    url      = env("TENANT_DATABASE_URL")
 }
 
 enum UserRole {
@@ -21,9 +21,9 @@ enum UserRole {
 }
 
 enum TenantStatusEnum {
-  ACTIVE
-  INACTIVE
-  SUSPENDED
+    ACTIVE
+    INACTIVE
+    SUSPENDED
 }
 
 model MedicalCenter {
@@ -32,21 +32,22 @@ model MedicalCenter {
     address   String   @map("address")
     createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
     updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
-    isActive  Boolean  @default(false) @map("is_active")
+    isArchive Boolean  @default(false) @map("is_archive")
 
     @@map("medical_center")
 }
 
 model User {
-    id          String   @id @default(uuid()) @map("id")
-    firstName   String   @map("first_name")
-    lastName    String?  @map("last_name")
-    phoneNumber String?  @unique @map("phone_number")
-    email       String?  @unique @map("email")
-    role        UserRole @map("role")
-    createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
-    updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz()
-    isActive    Boolean  @default(false) @map("is_active")
+    id                   String   @id @default(uuid()) @map("id")
+    firstName            String   @map("first_name")
+    lastName             String?  @map("last_name")
+    phoneNumber          String?  @unique @map("phone_number")
+    email                String?  @unique @map("email")
+    role                 UserRole @map("role")
+    isMedicalCenterOwner Boolean  @default(false) @map("is_medical_center_owner")
+    createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz()
+    updatedAt            DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+    isArchive            Boolean  @default(false) @map("is_archive")
 
     @@map("user")
 }
@@ -64,7 +65,7 @@ model Patient {
     allergies          String?  @map("allergies")
     createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz()
     updatedAt          DateTime @default(now()) @map("updated_at") @db.Timestamptz()
-    isActive           Boolean  @default(false) @map("is_active")
+    isArchive          Boolean  @default(false) @map("is_archive")
 
     @@map("patient")
 }

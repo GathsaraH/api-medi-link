@@ -11,7 +11,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
- url      = env("PUBLIC_DATABASE_URL")
+  url      = env("PUBLIC_DATABASE_URL")
 }
 
 enum UserRole {
@@ -53,7 +53,7 @@ model Tenant {
   status       String     @map("status")
   createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt    DateTime   @default(now()) @map("updated_at") @db.Timestamptz()
-  isArchive Boolean  @default(false) @map("is_archive")
+  isArchive    Boolean    @default(false) @map("is_archive")
 
   @@map("tenant")
 }
@@ -65,7 +65,7 @@ model MedicalCenter {
   tenantRecordId String?  @map("tenant_record_id")
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt      DateTime @default(now()) @map("updated_at") @db.Timestamptz()
-  isArchive Boolean  @default(false) @map("is_archive")
+  isArchive      Boolean  @default(false) @map("is_archive")
 
   systemUsers SystemUsers[]
 
@@ -73,19 +73,20 @@ model MedicalCenter {
 }
 
 model SystemUsers {
-  id              String        @id @default(uuid()) @map("id")
-  firstName       String        @map("first_name")
-  lastName        String        @map("last_name")
-  phoneNumber     String        @unique @map("phone_number")
-  email           String        @unique @map("email")
-  password        String        @map("password")
-  role            UserRole      @map("role")
-  tenantRecordId  String?       @map("tenant_record_id")
-  medicalCenter   MedicalCenter @relation(fields: [medicalCenterId], references: [id])
-  medicalCenterId String        @map("medical_center_id")
-  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt       DateTime      @default(now()) @map("updated_at") @db.Timestamptz()
-  isArchive Boolean  @default(false) @map("is_archive")
+  id                   String        @id @default(uuid()) @map("id")
+  firstName            String        @map("first_name")
+  lastName             String        @map("last_name")
+  phoneNumber          String        @unique @map("phone_number")
+  email                String        @unique @map("email")
+  password             String        @map("password")
+  role                 UserRole      @map("role")
+  tenantRecordId       String?       @map("tenant_record_id")
+  isMedicalCenterOwner Boolean       @default(false) @map("is_medical_center_owner")
+  medicalCenter        MedicalCenter @relation(fields: [medicalCenterId], references: [id])
+  medicalCenterId      String        @map("medical_center_id")
+  createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt            DateTime      @default(now()) @map("updated_at") @db.Timestamptz()
+  isArchive            Boolean       @default(false) @map("is_archive")
 
   @@map("system_users")
 }

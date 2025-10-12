@@ -45,7 +45,6 @@ export class JwtAuthMiddleware implements NestMiddleware {
         where: { code: payload.tenantCode },
         include: {
           dataSource: true,
-          shops: { include: { users: true } },
         },
       });
 
@@ -57,12 +56,11 @@ export class JwtAuthMiddleware implements NestMiddleware {
         tenant.dataSource.url,
       );
 
-      const user = await tenantPrisma.users.findUnique({
+      const user = await tenantPrisma.user.findUnique({
         where: { id: payload.userId },
-        include: { shop: true },
       });
 
-      if (!user || user.isArchived) {
+      if (!user || user.isArchive) {
         throw new UnauthorizedException('User not found or archived');
       }
 
@@ -74,7 +72,6 @@ export class JwtAuthMiddleware implements NestMiddleware {
       };
       request.userId = user.id;
       request.role = user.role as UserRole;
-      request.publicShopId = tenant.shops[0]?.id;
       request.tenant = {
         tenantCode: tenant.code,
         datasourceUrl: tenant.dataSource.url,
