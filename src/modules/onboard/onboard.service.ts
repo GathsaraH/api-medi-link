@@ -10,6 +10,7 @@ import {
   UserRole,
 } from '@prisma-public/prisma/client';
 import { TenantPrismaFactory } from '@/core/configs/database/tenant-prisma-factory';
+import { AuthService } from '../auth/auth.service';
 
 interface DatabaseConfig {
   schemaName: string;
@@ -24,6 +25,7 @@ export class OnboardService {
     private readonly configService: ConfigService,
     private readonly publicPrismaService: PublicPrismaService,
     private readonly tenantPrismaFactory: TenantPrismaFactory,
+    private readonly authService: AuthService,
   ) {}
   async onboardMedicalCenter(dto: CreateOnboardMedicalCenterDto) {
     try {
@@ -35,6 +37,12 @@ export class OnboardService {
         dto.medicalCenterName,
       );
       const tenant = await this.createAndSetupTenant(dto, dbConfig);
+      await this.createPublicSchemaResources(
+        this.publicPrismaService,
+        tenant.medicalCenterId,
+        tenant.userId,
+        dto,
+      );
     } catch (error) {
       console.error('Error during onboarding:', error);
       this.logger.error('Error during onboarding', error);
@@ -127,7 +135,6 @@ export class OnboardService {
   private async createPublicSchemaResources(
     prisma: Prisma.TransactionClient,
     medicalCenterId: string,
-    tenantId: string,
     tenantUserId: string,
     dto: CreateOnboardMedicalCenterDto,
   ) {
@@ -143,8 +150,33 @@ export class OnboardService {
       this.logger.log(
         `Created public medical center record with ID: ${medicalCenter.id}`,
       );
-      
       // Create Public Schema System User Resource
+      const systemUser = await prisma.systemUsers.create({
+        data: {
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          email: dto.email,
+          phoneNumber: dto.phoneNumber,
+          slmcNumber: dto.slmcNumber,
+          role: UserRole.DOCTOR,
+          medicalCenter: { connect: { id: medicalCenter.id } },
+          tenantRecordId: tenantUserId,
+          isMedicalCenterOwner: true,
+        },
+      });
+      this.logger.log(
+        `Created public system user record with ID: ${systemUser.id}`,
+      );
+      // Set password and other details
+      await this.authService.register({
+        email: dto.email,
+        password: dto.password,
+        phoneNumber: dto.phoneNumber,
+        medicalCenterId: medicalCenter.id,
+        role: UserRole.DOCTOR,
+      });
+      this.logger.log(`Set password for system user ID: ${systemUser.id}`);
+      return { medicalCenter, systemUser };
     } catch (error) {
       this.logger.error('Failed to create public schema resources', error);
       throw new HttpException(

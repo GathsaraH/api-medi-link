@@ -1,43 +1,46 @@
-// import { UserRole } from "@prisma-tenant/prisma/client";
-// import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from "@nestjs/common";
-// import { Reflector } from "@nestjs/core";
-// import { ROLES_KEY } from "@/common/decorators/roles.decorator";
-// import { SerialLoggerService } from "@/core/logging/seri-logger.service";
-// import { IRequestWithProps } from "../interfaces/request-with-user.interface";
+import { UserRole } from "@prisma-public/prisma/client";
+import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { ROLES_KEY } from "@/common/decorators/roles.decorator";
+import { SerialLoggerService } from "@/core/logging/seri-logger.service";
+import { IRequestWithUser } from "../interfaces/request-with-user.interface";
 
-// @Injectable()
-// export class RolesGuard implements CanActivate {
-//   constructor(
-//     private reflector: Reflector,
-//     private logger: SerialLoggerService,
-//   ) {}
+@Injectable()
+export class RolesGuard implements CanActivate {
+  constructor(
+    private reflector: Reflector,
+    private logger: SerialLoggerService,
+  ) {}
 
-//   canActivate(context: ExecutionContext): boolean {
-//     const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(ROLES_KEY, [context.getHandler(), context.getClass()]);
+  canActivate(context: ExecutionContext): boolean {
+    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(ROLES_KEY, [
+      context.getHandler(), 
+      context.getClass()
+    ]);
 
-//     if (!requiredRoles) {
-//       return true;
-//     }
+    if (!requiredRoles) {
+      return true;
+    }
 
-//     const request = context.switchToHttp().getRequest<IRequestWithProps>();
+    const request = context.switchToHttp().getRequest<IRequestWithUser>();
 
-//     if (!request.role) {
-//       this.logger.error("Role not found in request");
-//       throw new ForbiddenException("Role verification failed");
-//     }
+    if (!request.role) {
+      this.logger.error("Role not found in request");
+      throw new ForbiddenException("Role verification failed");
+    }
 
-//     // Special case: SUPER_ADMIN can access anything
-//     if (request.role === UserRole.SUPER_ADMIN && request.isSuperAdmin === true) {
-//       return true;
-//     }
+    // Special case: ADMIN can access most things (but not everything like super admin)
+    if (request.role === UserRole.ADMIN) {
+      return true;
+    }
 
-//     const hasRole = requiredRoles.some(role => role === request.role);
+    const hasRole = requiredRoles.some(role => role === request.role);
 
-//     if (!hasRole) {
-//       this.logger.warn(`Access denied: User with role ${request.role} tried to access a resource that requires one of ${requiredRoles.join(", ")}`);
-//       throw new ForbiddenException("Insufficient permissions");
-//     }
+    if (!hasRole) {
+      this.logger.warn(`Access denied: User with role ${request.role} tried to access a resource that requires one of ${requiredRoles.join(", ")}`);
+      throw new ForbiddenException("Insufficient permissions");
+    }
 
-//     return true;
-//   }
-// }
+    return true;
+  }
+}

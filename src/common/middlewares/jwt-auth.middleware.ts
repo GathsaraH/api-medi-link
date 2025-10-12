@@ -4,7 +4,8 @@ import { JwtTokenService } from '@/modules/auth/jwt/jwt-token.service';
 import { PublicPrismaService } from '@/core/configs/database/public-prisma.service';
 import { TenantPrismaFactory } from '@/core/configs/database/tenant-prisma-factory';
 import { IRequestWithUser } from '@/common/interfaces/request-with-user.interface';
-import { UserRole } from '@prisma-tenant/prisma/client';
+import { UserRole } from '@prisma-public/prisma/client';
+import { UserRole as TenantUserRole } from '@prisma-tenant/prisma/client';
 
 @Injectable()
 export class JwtAuthMiddleware implements NestMiddleware {
@@ -40,46 +41,72 @@ export class JwtAuthMiddleware implements NestMiddleware {
       // Verify the JWT token
       const payload = await this.jwtTokenService.verifyAccessToken(token);
 
-      // Get tenant information
-      const tenant = await this.publicPrisma.tenant.findUnique({
-        where: { code: payload.tenantCode },
-        include: {
-          dataSource: true,
-        },
-      });
+      if (payload.tenantCode) {
+        // Handle tenant user authentication
+        const tenant = await this.publicPrisma.tenant.findUnique({
+          where: { code: payload.tenantCode },
+          include: {
+            dataSource: true,
+          },
+        });
 
-      if (!tenant) {
-        throw new UnauthorizedException('Tenant not found');
+        if (!tenant) {
+          throw new UnauthorizedException('Tenant not found');
+        }
+
+        const tenantPrisma = await this.tenantPrismaFactory.getPooledPrismaInstance(
+          tenant.dataSource.url,
+        );
+
+        const user = await tenantPrisma.user.findUnique({
+          where: { id: payload.userId },
+        });
+
+        if (!user || user.isArchive) {
+          throw new UnauthorizedException('User not found or archived');
+        }
+
+        // Attach user and tenant info to the request
+        request.user = {
+          id: user.id,
+          email: user.email || '',
+          emailAddresses: [{ emailAddress: user.email || '' }],
+        };
+        request.userId = user.id;
+        request.role = user.role as TenantUserRole;
+        request.tenant = {
+          tenantCode: tenant.code,
+          datasourceUrl: tenant.dataSource.url,
+          tenantId: tenant.id,
+        };
+        request.authType = 'jwt';
+
+        this.logger.debug(`JWT tenant user authenticated: ${user.email} in tenant ${tenant.code}`);
+      } else {
+        // Handle system user authentication (public screen)
+        const user = await this.publicPrisma.systemUsers.findUnique({
+          where: { id: payload.userId },
+          include: {
+            medicalCenter: true,
+          },
+        });
+
+        if (!user || user.isArchive) {
+          throw new UnauthorizedException('User not found or archived');
+        }
+
+        // Attach user info to the request
+        request.user = {
+          id: user.id,
+          email: user.email,
+          emailAddresses: [{ emailAddress: user.email }],
+        };
+        request.userId = user.id;
+        request.role = user.role;
+        request.authType = 'jwt';
+
+        this.logger.debug(`JWT system user authenticated: ${user.email}`);
       }
-
-      const tenantPrisma = await this.tenantPrismaFactory.getPooledPrismaInstance(
-        tenant.dataSource.url,
-      );
-
-      const user = await tenantPrisma.user.findUnique({
-        where: { id: payload.userId },
-      });
-
-      if (!user || user.isArchive) {
-        throw new UnauthorizedException('User not found or archived');
-      }
-
-      // Attach user and tenant info to the request
-      request.user = {
-        id: user.id,
-        email: user.email,
-        emailAddresses: [{ emailAddress: user.email }],
-      };
-      request.userId = user.id;
-      request.role = user.role as UserRole;
-      request.tenant = {
-        tenantCode: tenant.code,
-        datasourceUrl: tenant.dataSource.url,
-        tenantId: tenant.id,
-      };
-      request.authType = 'jwt';
-
-      this.logger.debug(`JWT user authenticated: ${user.email} in tenant ${tenant.code}`);
 
       next();
     } catch (error) {

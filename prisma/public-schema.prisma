@@ -78,7 +78,7 @@ model SystemUsers {
   lastName             String        @map("last_name")
   phoneNumber          String        @unique @map("phone_number")
   email                String        @unique @map("email")
-  password             String        @map("password")
+  password             String?       @map("password")
   role                 UserRole      @map("role")
   tenantRecordId       String?       @map("tenant_record_id")
   slmcNumber           String?   @unique @map("slmc_number")
