@@ -21,13 +21,16 @@ export class PublicPrismaService extends PublicPrismaClient implements OnModuleI
       Logger.debug("Duration: " + e.duration + "ms");
     });
 
+    // Store reference to processDateFields to maintain context
+    const processDateFields = this.processDateFields.bind(this);
+
     // Replace $use with $extends
     const extended = this.$extends({
       query: {
         $allModels: {
           async $allOperations({ args, query }) {
             const result = await query(args);
-            return this.processDateFields(result);
+            return processDateFields(result);
           },
         },
       },

@@ -1,12 +1,15 @@
-import { Body, Controller, HttpCode, HttpStatus } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { OnboardService } from './onboard.service';
 import { ApiEndpoint } from '@/common/decorators/swagger.decorator';
 import { CreateOnboardMedicalCenterDto } from './dto/update-onboard-medial-center.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Onboarding')
 @Controller('onboard')
 export class OnboardController {
   constructor(private readonly onboardService: OnboardService) {}
 
+  @Post('medical-center')
   @ApiEndpoint('Onboard Medical Center', {
     body: {
       description: 'Details for onboarding a new medical center',

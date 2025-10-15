@@ -30,10 +30,11 @@ export class CreateOnboardMedicalCenterDto {
   @IsNotEmpty()
   @IsPhoneNumber()
   phoneNumber: string;
+
   @ApiProperty({
-    name: 'phoneNumber',
-    description: 'Contact phone number of the medical center',
-    example: '+1-555-1234',
+    name: 'doctorName',
+    description: 'Name of the doctor',
+    example: 'Dr. John Doe',
     required: true,
   })
   @IsString()
